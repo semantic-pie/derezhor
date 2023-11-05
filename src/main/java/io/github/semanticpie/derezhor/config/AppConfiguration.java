@@ -36,15 +36,4 @@ public class AppConfiguration {
     public JmanticService jmanticServiceBean() throws Exception {
         return new JmanticService(contextBean());
     }
-
-    @Autowired
-    ApplicationContext context;
-    @EventListener(ApplicationReadyEvent.class)
-    public void doSomethingAfterStartup() throws Exception {
-        log.info("doSomethingAfterStartup");
-        KeepAliveService keepAliveService = new KeepAliveService(context.getBean(CacheService.class), contextBean());
-        log.info("try listen:");
-        keepAliveService.listen();
-    }
-
 }
