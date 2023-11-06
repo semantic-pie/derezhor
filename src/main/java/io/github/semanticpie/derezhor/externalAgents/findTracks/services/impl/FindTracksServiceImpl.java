@@ -2,6 +2,7 @@ package io.github.semanticpie.derezhor.externalAgents.findTracks.services.impl;
 
 import io.github.semanticpie.derezhor.externalAgents.findTracks.models.TrackDTO;
 import io.github.semanticpie.derezhor.externalAgents.findTracks.services.FindTracksService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ostis.api.context.DefaultScContext;
 import org.ostis.scmemory.model.element.ScElement;
@@ -13,22 +14,17 @@ import org.ostis.scmemory.model.exception.ScMemoryException;
 import org.ostis.scmemory.model.pattern.pattern3.ScConstruction3;
 import org.ostis.scmemory.model.pattern.pattern3.ScPattern3Impl;
 import org.ostis.scmemory.model.pattern.pattern5.ScPattern5Impl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 
-@Slf4j
 @Service
+@AllArgsConstructor
+@Slf4j
 public class FindTracksServiceImpl implements FindTracksService {
 
     private final DefaultScContext context;
-
-    @Autowired
-    public FindTracksServiceImpl(DefaultScContext context) {
-        this.context = context;
-    }
 
     @Override
     public List<TrackDTO> findAll(Integer page, Integer limit) {
