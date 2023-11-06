@@ -118,6 +118,7 @@ public class FindTracksServiceImpl implements FindTracksService {
 //            String genreName = context.getStringLinkContent((ScLinkString)  findMainIdtf(genre));
 
             var track = new TrackDTO();
+            track.setScAddr(construction3.get3().getAddress());
             track.setHash(hash);
             track.setTitle(title);
             track.setAuthor(artistName);
