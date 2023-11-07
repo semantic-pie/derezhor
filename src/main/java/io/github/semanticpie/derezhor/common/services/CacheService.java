@@ -21,8 +21,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-@Slf4j
+
 @Service
+@Slf4j
 public class CacheService {
 
     private final CacheManager cacheManager;

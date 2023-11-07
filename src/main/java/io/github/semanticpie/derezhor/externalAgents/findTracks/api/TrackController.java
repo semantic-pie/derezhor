@@ -2,21 +2,17 @@ package io.github.semanticpie.derezhor.externalAgents.findTracks.api;
 
 import io.github.semanticpie.derezhor.externalAgents.findTracks.models.TrackDTO;
 import io.github.semanticpie.derezhor.externalAgents.findTracks.services.FindTracksService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@AllArgsConstructor
 @RequestMapping("/api/v1/derezhor")
 public class TrackController {
 
     private final FindTracksService findTracksService;
-
-    @Autowired
-    public TrackController(FindTracksService findTracksService) {
-        this.findTracksService = findTracksService;
-    }
 
     @CrossOrigin("*")
     @GetMapping("/tracks")
