@@ -73,4 +73,13 @@ public class CacheService {
             return null;
         }
     }
+
+    @Cacheable("sc-elements")
+    public ScNode get(String idtf, NodeType type) {
+        try {
+            return context.resolveKeynode(idtf, type);
+        } catch (ScMemoryException e) {
+            return null;
+        }
+    }
 }
