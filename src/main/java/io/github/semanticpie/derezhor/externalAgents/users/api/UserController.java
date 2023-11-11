@@ -1,12 +1,13 @@
 package io.github.semanticpie.derezhor.externalAgents.users.api;
 
 
-import io.github.semanticpie.derezhor.externalAgents.users.models.InitUserDTO;
+import io.github.semanticpie.derezhor.externalAgents.users.models.GenreDTO;
 import io.github.semanticpie.derezhor.externalAgents.users.models.UserDTO;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ostis.scmemory.model.element.node.ScNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,17 +50,33 @@ public class UserController {
                 .build();
     }
 
-    @PostMapping()
+    /*@PostMapping()
     ResponseEntity<UserDTO> addUser(@RequestBody InitUserDTO initUserDTO) {
         try {
-            UserDTO optUserDTO = userService.createUser(initUserDTO.getUsername()).orElseThrow();
-            genreService.addGenres(optUserDTO.getUuid(), initUserDTO.getFavoriteGenres());
-            return ResponseEntity.ok(optUserDTO);
+            UserDTO userDTO = userService.createNewUser(initUserDTO.getUsername()).orElseThrow();
+            genreService.addGenres(userDTO.getUuid(), initUserDTO.getFavoriteGenres());
+            return ResponseEntity.ok(userDTO);
+        } catch (Exception ex) {
+            log.error(Arrays.toString(ex.getStackTrace()));
+            return ResponseEntity.status(500).build();
+        }
+    }*/
+
+
+
+    @PostMapping("/test")
+    ResponseEntity<?> test(@RequestBody GenreDTO genreDTO) {
+        try {
+
+            String userUUID = userService.getUserUUID(genreDTO.getName()).orElseThrow();
+            System.out.println();
+            return ResponseEntity.ok(userUUID);
         } catch (Exception ex) {
             log.error(Arrays.toString(ex.getStackTrace()));
             return ResponseEntity.status(500).build();
         }
     }
+
 
     @DeleteMapping("/{uuid}")
     ResponseEntity<UserDTO> deleteUser(@PathVariable String uuid) {
@@ -70,5 +87,6 @@ public class UserController {
                         .build()
         ); // return deleted entity
     }
+
 }
 
