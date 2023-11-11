@@ -2,7 +2,6 @@ package io.github.semanticpie.derezhor.externalAgents.users.services;
 
 import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
 import io.github.semanticpie.derezhor.externalAgents.users.models.enums.UserRole;
-
 import java.util.Optional;
 
 public interface UserService {
@@ -10,6 +9,7 @@ public interface UserService {
     /**
      * Create formalized user in memory. Users must have unique usernames. This method also store
      * user's hashed password with salt.
+     *
      * @param username is user's nickname in memory
      * @param password is user's unencrypted password
      * @param userRole is user's privilege

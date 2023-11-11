@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 @RestController
 @Slf4j
@@ -31,13 +32,12 @@ public class AuthController {
                     signUpUserDTO.getUserRole()).orElseThrow();
             genreService.addGenres(user.getUuid(), signUpUserDTO.getFavoriteGenres());
             return ResponseEntity.ok(user);
-        } catch (Exception ex) {
+        } catch (NoSuchElementException ex) {
             log.error(Arrays.toString(ex.getStackTrace()));
             return ResponseEntity.status(500).build();
         }
-
-
-
-
     }
+
+
+
 }

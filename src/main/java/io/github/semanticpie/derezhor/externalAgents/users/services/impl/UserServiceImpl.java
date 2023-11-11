@@ -4,6 +4,7 @@ import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
 import io.github.semanticpie.derezhor.externalAgents.users.models.enums.UserRole;
 import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.encrypt.PasswordEncryptor;
+import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAlreadyExistsException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
@@ -37,10 +38,14 @@ public class UserServiceImpl implements UserService {
     private DefaultScContext context;
 
     @Override
-    public Optional<ScUser> createUser(final String username, final String password, final UserRole userRole) {
+    public Optional<ScUser> createUser(final String username,
+                                       final String password,
+                                       final UserRole userRole){
+
         if (getUsernameScLink(username).isPresent()) {
-            log.info("Username:" + username + " is already taken");
-            return Optional.empty();
+            var msg = "Username '" + username + "' is already taken";
+            log.info(msg);
+            throw new UserAlreadyExistsException(msg);
         }
 
         try {
@@ -74,16 +79,15 @@ public class UserServiceImpl implements UserService {
 
             savePassword(userStruct, password);
 
-            log.info("Create user: [{}:{}:{}]", strUUID, username, password);
+            log.info("Created user: [{}:{}:{}]", strUUID, username, password);
             return Optional.of(ScUser.builder()
                     .uuid(strUUID)
                     .username(username)
                     .password(password)
                     .userRole(userRole)
                     .build());
-
-        } catch (ScMemoryException e) {
-            log.error("Can't create user struct", e);
+        } catch (Exception ex) {
+            log.error("Can't create user", ex);
             return Optional.empty();
         }
     }
