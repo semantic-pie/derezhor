@@ -20,4 +20,11 @@ public class TrackController {
         return findTracksService.findAll(page, limit);
     }
 
+
+    @CrossOrigin("*")
+    @GetMapping("/{playlist}")
+    public List<TrackDTO> findByPlaylist(@RequestParam("user") String user, @PathVariable("playlist") String playlist) {
+        return findTracksService.findByPlaylist(user, playlist);
+    }
+
 }

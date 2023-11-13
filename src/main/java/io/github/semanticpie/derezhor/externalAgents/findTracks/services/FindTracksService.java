@@ -7,4 +7,5 @@ import java.util.List;
 public interface FindTracksService {
     List<TrackDTO> findAll(Integer page, Integer limit);
     List<TrackDTO> findByName(String name);
+    List<TrackDTO> findByPlaylist(String user, String playlist);
 }
