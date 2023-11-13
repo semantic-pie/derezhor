@@ -2,6 +2,8 @@ package io.github.semanticpie.derezhor.externalAgents.users.services;
 
 import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
 import io.github.semanticpie.derezhor.externalAgents.users.models.enums.UserRole;
+import org.ostis.scmemory.model.element.link.ScLinkString;
+
 import java.util.Optional;
 
 public interface UserService {
@@ -19,5 +21,8 @@ public interface UserService {
 
     Optional<String> getUserUUID(String username);
 
+    Optional<ScLinkString> getUsernameScLink(String username);
+
+    Optional<ScUser>
 
 }

@@ -1,18 +1,21 @@
 package io.github.semanticpie.derezhor.externalAgents.users.api;
 
-import io.github.semanticpie.derezhor.externalAgents.users.models.SignUpUserDTO;
-import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
-import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.AuthRequest;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.SignUpRequest;
+import io.github.semanticpie.derezhor.externalAgents.users.services.AuthService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
-import java.util.NoSuchElementException;
 
 @RestController
 @Slf4j
@@ -20,24 +23,20 @@ import java.util.NoSuchElementException;
 @AllArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
-    private final GenreService genreService;
+    private final AuthService authService;
 
     @PostMapping("/signup")
-    ResponseEntity<?> createNewUser(@RequestBody SignUpUserDTO signUpUserDTO) {
-        try {
-            var user = userService.createUser(
-                    signUpUserDTO.getUsername(),
-                    signUpUserDTO.getPassword(),
-                    signUpUserDTO.getUserRole()).orElseThrow();
-            genreService.addGenres(user.getUuid(), signUpUserDTO.getFavoriteGenres());
-            return ResponseEntity.ok(user);
-        } catch (NoSuchElementException ex) {
-            log.error(Arrays.toString(ex.getStackTrace()));
-            return ResponseEntity.status(500).build();
-        }
+    public ResponseEntity<?> createNewUser(@RequestBody SignUpRequest signUpRequest) {
+        return authService.createNewUser(signUpRequest);
     }
 
+    @PostMapping("/auth")
+    public ResponseEntity<?> createAuthToken(@RequestBody AuthRequest authRequest) {
+
+
+
+
+    }
 
 
 }

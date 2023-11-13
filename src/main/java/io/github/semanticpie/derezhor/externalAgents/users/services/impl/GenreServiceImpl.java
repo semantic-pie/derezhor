@@ -2,7 +2,7 @@ package io.github.semanticpie.derezhor.externalAgents.users.services.impl;
 
 
 import io.github.semanticpie.derezhor.common.services.CacheService;
-import io.github.semanticpie.derezhor.externalAgents.users.models.GenreDTO;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.GenreDTO;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

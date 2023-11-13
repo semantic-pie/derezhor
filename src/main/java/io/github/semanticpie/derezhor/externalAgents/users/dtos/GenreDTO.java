@@ -1,4 +1,4 @@
-package io.github.semanticpie.derezhor.externalAgents.users.models;
+package io.github.semanticpie.derezhor.externalAgents.users.dtos;
 
 import lombok.Data;
 

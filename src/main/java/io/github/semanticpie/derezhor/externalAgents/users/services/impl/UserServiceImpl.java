@@ -3,11 +3,8 @@ package io.github.semanticpie.derezhor.externalAgents.users.services.impl;
 import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
 import io.github.semanticpie.derezhor.externalAgents.users.models.enums.UserRole;
 import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
-import io.github.semanticpie.derezhor.externalAgents.users.services.encrypt.PasswordEncryptor;
-import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAlreadyExistsException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
 import org.ostis.api.context.DefaultScContext;
 import org.ostis.scmemory.model.element.ScElement;
 import org.ostis.scmemory.model.element.edge.EdgeType;
@@ -24,29 +21,29 @@ import org.ostis.scmemory.websocketmemory.memory.pattern.element.AliasPatternEle
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.FixedPatternElement;
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.TypePatternElement;
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
 @Slf4j
 @AllArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, UserDetailsService {
 
     private DefaultScContext context;
+    private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public Optional<ScUser> createUser(final String username,
                                        final String password,
-                                       final UserRole userRole){
-
-        if (getUsernameScLink(username).isPresent()) {
-            var msg = "Username '" + username + "' is already taken";
-            log.info(msg);
-            throw new UserAlreadyExistsException(msg);
-        }
+                                       final UserRole userRole) {
 
         try {
             UUID uuid = UUID.randomUUID();
@@ -54,7 +51,7 @@ public class UserServiceImpl implements UserService {
 
             // user's role
             ScNode conceptUserRole;
-            if (userRole.equals(UserRole.ADMIN)) {
+            if (userRole.equals(UserRole.ROLE_ADMIN)) {
                 conceptUserRole = context.resolveKeynode("concept_admin_role", NodeType.CONST_CLASS);
             } else {
                 conceptUserRole = context.resolveKeynode("concept_user_role", NodeType.CONST_CLASS);
@@ -92,18 +89,10 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void savePassword(ScNode userStruct, String password) throws ScMemoryException {
-        byte[] salt = PasswordEncryptor.generateSalt(16);
-        String hashedPassword = Hex.encodeHexString(PasswordEncryptor.encryptPassword(password, salt));
-        String saltHex = Hex.encodeHexString(salt);
+    private void savePassword(ScNode userStruct, String rawPassword) throws ScMemoryException {
+        String hashedPassword = passwordEncoder.encode(rawPassword);
 
-        ScNode noRolePasswordSalt = context.resolveKeynode("nrel_password_salt", NodeType.CONST_NO_ROLE);
         ScNode noRolePassword = context.resolveKeynode("nrel_password", NodeType.CONST_NO_ROLE);
-
-        // userStruct => scLinkSalt + nrel_password_salt
-        ScLinkString scLinkSalt = context.createStringLink(LinkType.LINK_CONST, saltHex);
-        ScEdge userStructSaltEdge = context.createEdge(EdgeType.D_COMMON_CONST, userStruct, scLinkSalt);
-        context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, noRolePasswordSalt, userStructSaltEdge);
 
         // userStruct => scLinkHashPassword + nrel_password
         ScLinkString scLinkHashPassword = context.createStringLink(LinkType.LINK_CONST, hashedPassword);
@@ -210,4 +199,21 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        ScUser user = findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(
+                String.format("User '%s' not found", username)
+        ));
+
+        List<GrantedAuthority> authorities = new ArrayList<>(Collections.emptyList());
+        authorities.add((GrantedAuthority) () -> user.getUserRole().name());
+
+
+        // Convert our User to which Spring Security understand
+        return new User(
+                user.getUsername(),
+                user.getPassword(),
+                authorities
+        );
+    }
 }

@@ -1,13 +1,12 @@
 package io.github.semanticpie.derezhor.externalAgents.users.api;
 
 
-import io.github.semanticpie.derezhor.externalAgents.users.models.GenreDTO;
-import io.github.semanticpie.derezhor.externalAgents.users.models.UserDTO;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.GenreDTO;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.UserDTO;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.ostis.scmemory.model.element.node.ScNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
