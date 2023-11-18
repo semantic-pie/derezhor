@@ -10,7 +10,8 @@ import org.ostis.api.context.DefaultScContext;
 import org.ostis.scmemory.model.element.ScElement;
 import org.ostis.scmemory.model.element.edge.EdgeType;
 import org.ostis.scmemory.model.element.edge.ScEdge;
-import org.ostis.scmemory.model.element.node.NodeType;
+import org.ostis.scmemory.model.element.link.LinkType;
+import org.ostis.scmemory.model.element.link.ScLink;
 import org.ostis.scmemory.model.element.node.ScNode;
 import org.ostis.scmemory.model.exception.ScMemoryException;
 import org.springframework.stereotype.Service;
@@ -40,9 +41,8 @@ public class GenreServiceImpl implements GenreService {
             for (GenreDTO genre : genreDTOList) {
                 ScNode genreConcept = service.get(genre.getName());
 
-                ScNode weightNode = context.resolveKeynode(Integer.toString(genre.getWeight()), NodeType.CONST);
-
-                ScEdge weightRelationEdge = context.resolveEdge(weightNode, EdgeType.D_COMMON_VAR, genreConcept);
+                ScLink weightNode = context.createStringLink(LinkType.LINK_CONST, Integer.toString(genre.getWeight()));
+                ScEdge weightRelationEdge = context.resolveEdge(genreConcept, EdgeType.D_COMMON_VAR, weightNode);
 
                 ScEdge genreNodeGenreConceptEdge = context.resolveEdge(genreNode, EdgeType.ACCESS_VAR_POS_PERM, genreConcept);
 

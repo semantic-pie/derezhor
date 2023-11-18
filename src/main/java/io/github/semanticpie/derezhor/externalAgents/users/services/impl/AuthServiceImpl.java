@@ -1,10 +1,11 @@
 package io.github.semanticpie.derezhor.externalAgents.users.services.impl;
 
 import io.github.semanticpie.derezhor.externalAgents.users.dtos.AuthRequest;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.JwtResponse;
 import io.github.semanticpie.derezhor.externalAgents.users.dtos.SignUpRequest;
+import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
 import io.github.semanticpie.derezhor.externalAgents.users.services.AuthService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
-import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAlreadyExistsException;
 import io.github.semanticpie.derezhor.externalAgents.users.services.utils.JwtTokenProvider;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
 public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserService userService;
+    private final UserServiceImpl userService;
     private final GenreService genreService;
     private final AuthenticationManager authenticationManager;
 
@@ -64,10 +64,14 @@ public class AuthServiceImpl implements AuthService {
                             authRequest.getUsername(), authRequest.getPassword()
                     ));
         } catch (BadCredentialsException ex) {
+            log.info(ex.getMessage());
+
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);// замеееннииить !!!!!!!!
         }
-        UserDetails userDetails = userService.loadUserByUsername(authRequest.getUsername());
-        String token = jwtTokenProvider.generateToken(userDetails);
+        // обработать!!!!
+        ScUser user = userService.findByUsername(authRequest.getUsername()).orElseThrow();
+        String token = jwtTokenProvider.generateToken(user);
+        return ResponseEntity.ok(new JwtResponse(token));
     }
 
 

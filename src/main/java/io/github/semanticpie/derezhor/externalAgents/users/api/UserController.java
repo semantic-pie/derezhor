@@ -4,7 +4,8 @@ package io.github.semanticpie.derezhor.externalAgents.users.api;
 import io.github.semanticpie.derezhor.externalAgents.users.dtos.GenreDTO;
 import io.github.semanticpie.derezhor.externalAgents.users.dtos.UserDTO;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
-import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
+//import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
+import io.github.semanticpie.derezhor.externalAgents.users.services.impl.UserServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserController {
 
-    private UserService userService;
+    private UserServiceImpl userService;
 
     private GenreService genreService;
 
@@ -47,33 +48,6 @@ public class UserController {
                 .uuid("9c858901-8a57-4791-81fe-4c455b099bc9")
                 .username("badmood")
                 .build();
-    }
-
-    /*@PostMapping()
-    ResponseEntity<UserDTO> addUser(@RequestBody InitUserDTO initUserDTO) {
-        try {
-            UserDTO userDTO = userService.createNewUser(initUserDTO.getUsername()).orElseThrow();
-            genreService.addGenres(userDTO.getUuid(), initUserDTO.getFavoriteGenres());
-            return ResponseEntity.ok(userDTO);
-        } catch (Exception ex) {
-            log.error(Arrays.toString(ex.getStackTrace()));
-            return ResponseEntity.status(500).build();
-        }
-    }*/
-
-
-
-    @PostMapping("/test")
-    ResponseEntity<?> test(@RequestBody GenreDTO genreDTO) {
-        try {
-
-            String userUUID = userService.getUserUUID(genreDTO.getName()).orElseThrow();
-            System.out.println();
-            return ResponseEntity.ok(userUUID);
-        } catch (Exception ex) {
-            log.error(Arrays.toString(ex.getStackTrace()));
-            return ResponseEntity.status(500).build();
-        }
     }
 
 

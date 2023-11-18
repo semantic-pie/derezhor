@@ -1,6 +1,5 @@
 package io.github.semanticpie.derezhor.config;
 
-import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.impl.UserServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -24,9 +24,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
 
-    private final UserServiceImpl userService;
-
-//    private static final
+    private final UserDetailsService userDetailsService;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -42,7 +40,7 @@ public class SecurityConfig {
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         var daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-        daoAuthenticationProvider.setUserDetailsService(userService);
+        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
         return daoAuthenticationProvider;
     }
 
@@ -51,7 +49,7 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         (authorize) -> authorize
-                                .requestMatchers("/pie-tunes/api/v1/signup", "/pie-tunes/api/v1/auth").permitAll()
+                                .requestMatchers("/pie-tunes/api/v1/signup", "/pie-tunes/api/v1/auth", "/api/v1/derezhor/tracks").permitAll()
                                 .anyRequest().authenticated()
                 )
                 // For REST: no cookie, so we disable them
@@ -63,7 +61,7 @@ public class SecurityConfig {
                         (exceptionHandling) -> exceptionHandling
                                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+//                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
                 .build();
     }
 

@@ -1,3 +1,4 @@
+
 package io.github.semanticpie.derezhor.externalAgents.users.services;
 
 import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
@@ -8,7 +9,8 @@ import java.util.Optional;
 
 public interface UserService {
 
-    /**
+
+/**
      * Create formalized user in memory. Users must have unique usernames. This method also store
      * user's hashed password with salt.
      *
@@ -23,6 +25,7 @@ public interface UserService {
 
     Optional<ScLinkString> getUsernameScLink(String username);
 
-    Optional<ScUser>
+    Optional<ScUser> findByUsername(String username);
 
 }
+

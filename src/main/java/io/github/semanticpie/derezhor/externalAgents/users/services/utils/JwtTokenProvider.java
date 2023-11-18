@@ -37,8 +37,8 @@ public class JwtTokenProvider {
         Key signingKey = new SecretKeySpec(secret, signatureAlgorithm.getJcaName());
 
         return Jwts.builder()
-                .setClaims(claims)
                 .setSubject(user.getUsername()) // usually it's username
+                .setClaims(claims)
                 .setIssuedAt(issuedDate)
                 .setExpiration(expiredDate)
                 .signWith(signingKey, signatureAlgorithm)

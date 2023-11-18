@@ -21,6 +21,7 @@ import org.ostis.scmemory.websocketmemory.memory.pattern.element.AliasPatternEle
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.FixedPatternElement;
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.TypePatternElement;
 
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,7 +39,6 @@ import java.util.stream.Stream;
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     private DefaultScContext context;
-    private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public Optional<ScUser> createUser(final String username,
@@ -49,20 +49,17 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             UUID uuid = UUID.randomUUID();
             var strUUID = uuid.toString().replace('-', '_');
 
-            // user's role
-            ScNode conceptUserRole;
-            if (userRole.equals(UserRole.ROLE_ADMIN)) {
-                conceptUserRole = context.resolveKeynode("concept_admin_role", NodeType.CONST_CLASS);
-            } else {
-                conceptUserRole = context.resolveKeynode("concept_user_role", NodeType.CONST_CLASS);
-            }
-
             // concept_user -> userStruct
-            // concept_role -> userStruct
             ScNode conceptUser = context.resolveKeynode("concept_user", NodeType.CONST_CLASS);
             ScNode userStruct = context.resolveKeynode(strUUID, NodeType.CONST_STRUCT);
             context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, conceptUser, userStruct);
-            context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, conceptUserRole, userStruct);
+
+            // userStruct => userRoleName
+            // nrel_user_role -> edge
+            ScNode nrelUserRole = context.resolveKeynode("nrel_user_role", NodeType.CONST_NO_ROLE);
+            ScLinkString scLinkUserRole = context.createStringLink(LinkType.LINK_CONST, userRole.name());
+            ScEdge userRoleEdge = context.createEdge(EdgeType.D_COMMON_CONST, userStruct, scLinkUserRole);
+            context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, nrelUserRole, userRoleEdge);
 
             // lang_en -> username
             ScLinkString scLinkUsername = context.createStringLink(LinkType.LINK_CONST, username);
@@ -90,6 +87,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     private void savePassword(ScNode userStruct, String rawPassword) throws ScMemoryException {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         String hashedPassword = passwordEncoder.encode(rawPassword);
 
         ScNode noRolePassword = context.resolveKeynode("nrel_password", NodeType.CONST_NO_ROLE);
@@ -163,6 +161,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
+    @Override
     public Optional<ScLinkString> getUsernameScLink(String username) {
         if (!isAnyUserExists()) {
             return Optional.empty();
@@ -195,6 +194,93 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                     .findFirst();
 
         } catch (ScMemoryException ex) {
+            return Optional.empty();
+        }
+    }
+
+    // добаить информативности чего у юзера нет
+    @Override
+    public Optional<ScUser> findByUsername(String username) {
+        try {
+            var uuid = getUserUUID(username).orElseThrow();
+            var password = getUserPassword(uuid).orElseThrow();
+            var userRole = getUserRole(uuid).orElseThrow();
+
+
+            return Optional.of(ScUser.builder()
+                    .uuid(uuid)
+                    .username(username)
+                    .password(password)
+                    .userRole(userRole)
+                    .build());
+        } catch (NoSuchElementException ex) {
+            log.info("User with [{}] not found", username);
+            return Optional.empty();
+        }
+
+    }
+
+
+    private Optional<String> getUserPassword(String uuid) {
+        return getScLinkStringContent(uuid, "nrel_password");
+    }
+
+    private Optional<UserRole> getUserRole(String uuid) {
+        var optUserRoleContent = getScLinkStringContent(uuid, "nrel_user_role");
+
+        if (optUserRoleContent.isPresent()) {
+            try {
+                return Optional.of(UserRole.valueOf(optUserRoleContent.get()));
+            } catch (IllegalArgumentException e) {
+                log.error("Error of casting content UserRoleLink to UserRole");
+                return Optional.empty();
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
+
+    /**
+     * This method search construction like sourceNode ==> scLinkString with nrelRelation
+     * and returns the content of scLinkString.
+     * @param sourceNodeIdtf represents source node idtf from arrow go
+     * @param nrelRelationWithScLinkIdtf represents relation how node and link connected
+     * @return content of found scLinkString
+     */
+    public Optional<String> getScLinkStringContent(String sourceNodeIdtf, String nrelRelationWithScLinkIdtf) {
+        try {
+            var sourceNode = context
+                    .findKeynode(sourceNodeIdtf)
+                    .orElseThrow();
+            var nrelRelation = context
+                    .findKeynode(nrelRelationWithScLinkIdtf)
+                    .orElseThrow();
+            ScPattern p = new DefaultWebsocketScPattern();
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(sourceNode),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("sourceNode=>scLinkString")),
+                    new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("scLinkString"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(nrelRelation),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("edge_1")),
+                    new AliasPatternElement("sourceNode=>scLinkString")
+            ));
+
+            Stream<Stream<? extends ScElement>> result = context.find(p);
+
+            return result
+                    .flatMap(innerStream -> innerStream.filter(link -> link instanceof ScLinkString)
+                            .map(link -> (ScLinkString) link))
+                    .findFirst()
+                    .map(ScLinkString::getContent);
+
+
+        } catch (ScMemoryException e) {
+            log.info("Can't find link between {} and {}", sourceNodeIdtf, nrelRelationWithScLinkIdtf);
             return Optional.empty();
         }
     }

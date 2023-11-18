@@ -32,10 +32,7 @@ public class AuthController {
 
     @PostMapping("/auth")
     public ResponseEntity<?> createAuthToken(@RequestBody AuthRequest authRequest) {
-
-
-
-
+        return authService.createAuthToken(authRequest);
     }
 
 
