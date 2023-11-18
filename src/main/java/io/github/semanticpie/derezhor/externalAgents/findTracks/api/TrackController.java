@@ -9,13 +9,13 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/derezhor")
+@RequestMapping("/api/v1/derezhor/tracks")
 public class TrackController {
 
     private final FindTracksService findTracksService;
 
     @CrossOrigin("*")
-    @GetMapping("/tracks")
+    @GetMapping()
     public List<TrackDTO> findAll(@RequestParam("page") Integer page, @RequestParam("limit") Integer limit) {
         return findTracksService.findAll(page, limit);
     }

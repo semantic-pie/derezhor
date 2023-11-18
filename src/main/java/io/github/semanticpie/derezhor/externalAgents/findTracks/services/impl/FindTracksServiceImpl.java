@@ -11,13 +11,17 @@ import org.ostis.scmemory.model.element.link.LinkType;
 import org.ostis.scmemory.model.element.link.ScLinkString;
 import org.ostis.scmemory.model.element.node.NodeType;
 import org.ostis.scmemory.model.exception.ScMemoryException;
-import org.ostis.scmemory.model.pattern.pattern3.ScConstruction3;
-import org.ostis.scmemory.model.pattern.pattern3.ScPattern3Impl;
-import org.ostis.scmemory.model.pattern.pattern5.ScPattern5Impl;
+import org.ostis.scmemory.model.pattern.ScPattern;
+import org.ostis.scmemory.websocketmemory.memory.pattern.DefaultWebsocketScPattern;
+import org.ostis.scmemory.websocketmemory.memory.pattern.SearchingPatternTriple;
+import org.ostis.scmemory.websocketmemory.memory.pattern.element.AliasPatternElement;
+import org.ostis.scmemory.websocketmemory.memory.pattern.element.FixedPatternElement;
+import org.ostis.scmemory.websocketmemory.memory.pattern.element.TypePatternElement;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -29,12 +33,76 @@ public class FindTracksServiceImpl implements FindTracksService {
     @Override
     public List<TrackDTO> findAll(Integer page, Integer limit) {
         try {
+            long time = System.currentTimeMillis();
             var conceptTrack = context.findKeynode("concept_track").orElseThrow();
-            log.info("1");
+            var sysIdtf = context.findKeynode("nrel_system_identifier").orElseThrow();
+            var mainIdtf = context.findKeynode("nrel_main_idtf").orElseThrow();
+            var nrelArtis = context.findKeynode("nrel_artis").orElseThrow();
 
-            return context.find(new ScPattern3Impl<>(conceptTrack, EdgeType.ACCESS_VAR_POS_PERM, NodeType.VAR))
-                    .map(this::toTrack)
-                    .filter(Objects::nonNull).toList();
+            ScPattern p = new DefaultWebsocketScPattern();
+            // track
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(conceptTrack),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("edge_1")),
+                    new TypePatternElement<>(NodeType.VAR, new AliasPatternElement("track"))
+            ));
+
+            // hash
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("track"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>hash")),
+                    new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("hash"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(sysIdtf),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("sys_idtf->(track=>hash)")),
+                    new AliasPatternElement("track=>hash")
+            ));
+
+            // title
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("track"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>title")),
+                    new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("title"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(mainIdtf),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("main_idtf->(track=>title)")),
+                    new AliasPatternElement("track=>title")
+            ));
+
+            // artist
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("track"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>artist")),
+                    new TypePatternElement<>(NodeType.VAR, new AliasPatternElement("artist"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(nrelArtis),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("nrel_artist->(track=>artist)")),
+                    new AliasPatternElement("track=>artist")
+            ));
+
+            // artist name
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("artist"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("artist=>name")),
+                    new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("artist_name"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(mainIdtf),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("main_idtf->(artist=>name)")),
+                    new AliasPatternElement("artist=>name")
+            ));
+
+            List<TrackDTO> result = context.find(p).limit(limit).map(this::toTrack).toList();
+
+            log.info("SEARCH TIME: {}", System.currentTimeMillis() - time );
+            return result;
         } catch (ScMemoryException e) {
             throw new RuntimeException(e);
         }
@@ -43,83 +111,18 @@ public class FindTracksServiceImpl implements FindTracksService {
 
     @Override
     public List<TrackDTO> findByName(String name) {
-        return null;
+        return List.of();
     }
 
-
-    private ScElement findSystemIdtf(ScElement element) {
+    private TrackDTO toTrack(Stream<? extends ScElement> pattern) {
         try {
-            log.info("findSystemIdtf");
-            var sysIdtf = context.findKeynode("nrel_system_identifier").orElseThrow();
-            return context.find(new ScPattern5Impl<>(
-                    element, EdgeType.D_COMMON_VAR, LinkType.LINK_VAR, EdgeType.ACCESS_VAR_POS_PERM, sysIdtf
-            )).findFirst().orElseThrow().get3();
-        } catch (ScMemoryException | RuntimeException ignored) {
-            return null;
-        }
-    }
-
-    private ScElement findMainIdtf(ScElement element) {
-        try {
-            log.info("nrel_main_idtf");
-            var mainIdtf = context.findKeynode("nrel_main_idtf").orElseThrow();
-            return context.find(new ScPattern5Impl<>(
-                    element, EdgeType.D_COMMON_VAR, LinkType.LINK_VAR, EdgeType.ACCESS_VAR_POS_PERM, mainIdtf
-            )).findFirst().orElseThrow().get3();
-        } catch (ScMemoryException | RuntimeException ignored) {
-            return null;
-        }
-
-    }
-
-    private ScElement findArtist(ScElement element) {
-        try {
-            log.info("nrel_artis");
-            var nrelArtis = context.findKeynode("nrel_artis").orElseThrow();
-            return context.find(new ScPattern5Impl<>(
-                    element, EdgeType.D_COMMON_VAR, NodeType.VAR, EdgeType.ACCESS_VAR_POS_PERM, nrelArtis
-            )).findFirst().orElseThrow().get3();
-        } catch (ScMemoryException | RuntimeException ignored) {
-            return null;
-        }
-
-    }
-
-    private ScElement findGenre(ScElement element) {
-        try {
-            log.info("nrel_genre");
-            var nrelGenre= context.findKeynode("nrel_genre").orElseThrow();
-            return context.find(new ScPattern5Impl<>(
-                    element, EdgeType.D_COMMON_VAR, NodeType.VAR, EdgeType.ACCESS_VAR_POS_PERM, nrelGenre
-            )).findFirst().orElseThrow().get3();
-        } catch (ScMemoryException | RuntimeException ignored) {
-            return null;
-        }
-
-    }
-
-    private TrackDTO toTrack(ScConstruction3 construction3) {
-        log.info("toTrack");
-        try {
-            String hash = context.getStringLinkContent((ScLinkString)  findSystemIdtf(construction3.get3()));
-            log.info("hash: {}", hash);
-
-            String title = context.getStringLinkContent((ScLinkString)  findMainIdtf(construction3.get3()));
-            log.info("title: {}", title);
-
-            var artist = findArtist(construction3.get3());
-            String artistName = context.getStringLinkContent((ScLinkString)  findMainIdtf(artist));
-
-//            var genre = findGenre(construction3.get3());
-//            String genreName = context.getStringLinkContent((ScLinkString)  findMainIdtf(genre));
-
-            var track = new TrackDTO();
-            track.setScAddr(construction3.get3().getAddress());
-            track.setHash(hash);
-            track.setTitle(title);
-            track.setAuthor(artistName);
-//            track.setGenre(genreName);
-            return track;
+            var searchResult = pattern.toList();
+            return TrackDTO.builder()
+                    .hash(context.getStringLinkContent((ScLinkString) searchResult.get(5)))
+                    .title(context.getStringLinkContent((ScLinkString) searchResult.get(11)))
+                    .author(context.getStringLinkContent((ScLinkString)  searchResult.get(23)))
+                    .scAddr(searchResult.get(2).getAddress())
+                    .build();
         } catch (ScMemoryException | RuntimeException e) {
             return null;
         }
