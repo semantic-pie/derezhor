@@ -16,6 +16,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/loafloader")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.HEAD, RequestMethod.GET, RequestMethod.POST})
 public class UploadController {
 
     private final SyncResourcesService syncResourcesService;
@@ -38,7 +39,6 @@ public class UploadController {
         }
     }
 
-    @CrossOrigin("*")
     @PostMapping()
     public ResponseEntity<?> postMultipleResource(@RequestParam("resources") List<MultipartFile> files) {
         try {
