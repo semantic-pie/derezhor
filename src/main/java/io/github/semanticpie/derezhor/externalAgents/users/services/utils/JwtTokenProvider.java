@@ -27,6 +27,7 @@ public class JwtTokenProvider {
         Map<String, Object> claims = new HashMap<>();
         // payload
         claims.put("uuid", user.getUuid());
+        claims.put("username", user.getUsername());
         claims.put("role", user.getUserRole());
 
         var issuedDate = new Date();
@@ -46,7 +47,7 @@ public class JwtTokenProvider {
     }
 
     public String getUsername(String token) {
-        return getAllClaimsFromToken(token).getSubject();
+        return getAllClaimsFromToken(token).get("username", String.class);
     }
 
     public String getUUID(String token) {
@@ -56,7 +57,6 @@ public class JwtTokenProvider {
     public String getRole(String token) {
         return getAllClaimsFromToken(token).get("role", String.class);
     }
-
 
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()

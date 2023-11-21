@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Slf4j
-@RequestMapping(path = "/pie-tunes/api/v1")
+@RequestMapping(path = "/api/v1/derezhor")
 @AllArgsConstructor
 public class AuthController {
 

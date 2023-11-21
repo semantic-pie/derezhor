@@ -1,6 +1,5 @@
 package io.github.semanticpie.derezhor.config;
 
-import io.github.semanticpie.derezhor.externalAgents.users.services.impl.UserServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -25,6 +25,11 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
+
+    private final String[] WHITE_LIST_URLs = {
+            "/api/v1/derezhor/signup",
+            "/api/v1/derezhor/auth",
+            "/api/v1/derezhor/tracks"};
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -47,22 +52,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(
-                        (authorize) -> authorize
-                                .requestMatchers("/pie-tunes/api/v1/signup", "/pie-tunes/api/v1/auth", "/api/v1/derezhor/tracks").permitAll()
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                .authorizeHttpRequests((authorize) -> authorize
+                                .requestMatchers(WHITE_LIST_URLs).permitAll()
+                )
+                .authorizeHttpRequests((authorize) -> authorize
                                 .anyRequest().authenticated()
+
                 )
                 // For REST: no cookie, so we disable them
-                .sessionManagement(
-                        (session) -> session
-                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
                 .exceptionHandling(
                         (exceptionHandling) -> exceptionHandling
                                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
-//                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
+
+    }
+
+    @Bean
+    public JwtFilterRequest jwtAuthenticationFilter() {
+        return new JwtFilterRequest();
     }
 
 
