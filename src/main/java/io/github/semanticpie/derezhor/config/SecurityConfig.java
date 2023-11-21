@@ -29,7 +29,8 @@ public class SecurityConfig {
     private final String[] WHITE_LIST_URLs = {
             "/api/v1/derezhor/signup",
             "/api/v1/derezhor/auth",
-            "/api/v1/derezhor/tracks"};
+            "/api/v1/derezhor/tracks",
+            "/api/v1/loafloader/**"};
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
