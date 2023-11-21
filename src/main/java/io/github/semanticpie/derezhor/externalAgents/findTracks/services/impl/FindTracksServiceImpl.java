@@ -99,7 +99,20 @@ public class FindTracksServiceImpl implements FindTracksService {
                     new AliasPatternElement("artist=>name")
             ));
 
-            List<TrackDTO> result = context.find(p).limit(limit).map(this::toTrack).toList();
+            List<TrackDTO> result = context.find(p)
+                    .limit((long) limit * page)
+                    .map(this::toTrack)
+                    .toList();
+
+            if (page == 1) {
+                // skip
+            }
+            else if (result.size() < page * limit) {
+                result = result.subList(page * limit - (limit - 1), result.size()-1);
+            } else {
+                result = result.subList(page * limit - limit - 1, limit * page);
+            }
+
 
             log.info("SEARCH TIME: {}", System.currentTimeMillis() - time );
             return result;
