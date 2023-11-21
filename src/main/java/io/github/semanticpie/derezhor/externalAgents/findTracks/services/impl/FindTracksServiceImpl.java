@@ -17,7 +17,6 @@ import org.ostis.scmemory.websocketmemory.memory.pattern.SearchingPatternTriple;
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.AliasPatternElement;
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.FixedPatternElement;
 import org.ostis.scmemory.websocketmemory.memory.pattern.element.TypePatternElement;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -114,7 +113,7 @@ public class FindTracksServiceImpl implements FindTracksService {
             }
 
 
-            log.info("SEARCH TIME: {}", System.currentTimeMillis() - time );
+            log.info("SEARCH TIME: {}", System.currentTimeMillis() - time);
             return result;
         } catch (ScMemoryException e) {
             throw new RuntimeException(e);
@@ -133,7 +132,7 @@ public class FindTracksServiceImpl implements FindTracksService {
             return TrackDTO.builder()
                     .hash(context.getStringLinkContent((ScLinkString) searchResult.get(5)))
                     .title(context.getStringLinkContent((ScLinkString) searchResult.get(11)))
-                    .author(context.getStringLinkContent((ScLinkString)  searchResult.get(23)))
+                    .author(context.getStringLinkContent((ScLinkString) searchResult.get(23)))
                     .scAddr(searchResult.get(2).getAddress())
                     .build();
         } catch (ScMemoryException | RuntimeException e) {

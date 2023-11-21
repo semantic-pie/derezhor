@@ -1,7 +1,7 @@
 package io.github.semanticpie.derezhor.externalAgents.users.services;
 
 
-import io.github.semanticpie.derezhor.externalAgents.users.models.GenreDTO;
+import io.github.semanticpie.derezhor.externalAgents.users.dtos.GenreDTO;
 
 import java.util.List;
 
