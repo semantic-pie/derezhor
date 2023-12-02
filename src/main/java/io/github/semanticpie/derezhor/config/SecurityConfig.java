@@ -33,6 +33,7 @@ public class SecurityConfig {
             "/api/v1/loafloader/**"
     };
 
+
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
