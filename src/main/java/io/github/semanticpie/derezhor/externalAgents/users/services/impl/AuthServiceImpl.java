@@ -8,10 +8,10 @@ import io.github.semanticpie.derezhor.externalAgents.users.services.AuthService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAlreadyExistsException;
+import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAuthenticationException;
 import io.github.semanticpie.derezhor.externalAgents.users.services.utils.JwtTokenProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -64,18 +64,16 @@ public class AuthServiceImpl implements AuthService {
                     .authenticate(new UsernamePasswordAuthenticationToken(
                             authRequest.getUsername(), authRequest.getPassword()
                     ));
+            // желательно обработать!
+            ScUser user = userService.findByUsername(authRequest.getUsername()).orElseThrow();
+            String token = jwtTokenProvider.generateToken(user);
+            return ResponseEntity.ok(new JwtResponse(token));
+
         } catch (BadCredentialsException ex) {
             log.info(ex.getMessage());
-
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);// замеееннииить !!!!!!!!
+            throw new UserAuthenticationException("Wrong username or password");
         }
-        // обработать!!!!
-        ScUser user = userService.findByUsername(authRequest.getUsername()).orElseThrow();
-        String token = jwtTokenProvider.generateToken(user);
-        return ResponseEntity.ok(new JwtResponse(token));
+
     }
-
-
-
 
 }

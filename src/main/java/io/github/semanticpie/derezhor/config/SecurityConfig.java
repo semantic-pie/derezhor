@@ -29,7 +29,9 @@ public class SecurityConfig {
     private final String[] WHITE_LIST_URLs = {
             "/api/v1/derezhor/signup",
             "/api/v1/derezhor/auth",
-            "/api/v1/derezhor/tracks"};
+            "/api/v1/derezhor/tracks",
+            "/api/v1/loafloader/**"
+    };
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -51,7 +53,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
+        return http
+                .cors(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable)
+
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
