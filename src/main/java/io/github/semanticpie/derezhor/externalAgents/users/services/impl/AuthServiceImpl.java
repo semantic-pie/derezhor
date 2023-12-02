@@ -6,6 +6,7 @@ import io.github.semanticpie.derezhor.externalAgents.users.dtos.SignUpRequest;
 import io.github.semanticpie.derezhor.externalAgents.users.models.ScUser;
 import io.github.semanticpie.derezhor.externalAgents.users.services.AuthService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.GenreService;
+import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAlreadyExistsException;
 import io.github.semanticpie.derezhor.externalAgents.users.services.utils.JwtTokenProvider;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,7 @@ import java.util.NoSuchElementException;
 public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserServiceImpl userService;
+    private final UserService userService;
     private final GenreService genreService;
     private final AuthenticationManager authenticationManager;
 
