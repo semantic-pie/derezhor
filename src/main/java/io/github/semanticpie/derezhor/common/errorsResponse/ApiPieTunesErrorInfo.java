@@ -1,4 +1,4 @@
-package io.github.semanticpie.derezhor.externalAgents.users.errorsResponse;
+package io.github.semanticpie.derezhor.common.errorsResponse;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

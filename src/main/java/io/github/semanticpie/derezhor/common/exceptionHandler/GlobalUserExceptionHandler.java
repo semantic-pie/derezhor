@@ -1,6 +1,6 @@
-package io.github.semanticpie.derezhor.externalAgents.users.api.exceptionHandler;
+package io.github.semanticpie.derezhor.common.exceptionHandler;
 
-import io.github.semanticpie.derezhor.externalAgents.users.errorsResponse.ApiPieTunesErrorInfo;
+import io.github.semanticpie.derezhor.common.errorsResponse.ApiPieTunesErrorInfo;
 import io.github.semanticpie.derezhor.externalAgents.users.services.exceptions.UserAlreadyExistsException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
