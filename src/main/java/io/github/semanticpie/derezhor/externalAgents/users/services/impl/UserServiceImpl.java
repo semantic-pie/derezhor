@@ -149,24 +149,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
-    private boolean isAnyUserExists() {
-        try {
-            context
-                    .findKeynode("concept_user")
-                    .orElseThrow(() -> new ScMemoryException("concept_user is not found in memory"));
-            return true;
-        } catch (ScMemoryException ex) {
-            log.info("No users in memory");
-            return false;
-        }
-    }
-
     @Override
     public Optional<ScLinkString> getUsernameScLink(String username) {
-        if (!isAnyUserExists()) {
-            return Optional.empty();
-        }
-
         try {
             var nrelUsername = context.findKeynode("nrel_username").orElseThrow();
             ScPattern p = new DefaultWebsocketScPattern();
@@ -220,7 +204,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     }
 
-
     private Optional<String> getUserPassword(String uuid) {
         return getScLinkStringContent(uuid, "nrel_password");
     }
@@ -239,7 +222,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             return Optional.empty();
         }
     }
-
 
     /**
      * This method search construction like sourceNode ==> scLinkString with nrelRelation
@@ -293,7 +275,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
         List<GrantedAuthority> authorities = new ArrayList<>(Collections.emptyList());
         authorities.add((GrantedAuthority) () -> user.getUserRole().name());
-
 
         // Convert our User to which Spring Security understand
         return new User(

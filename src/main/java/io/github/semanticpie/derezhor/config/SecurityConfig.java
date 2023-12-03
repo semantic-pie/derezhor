@@ -30,7 +30,9 @@ public class SecurityConfig {
             "/api/v1/derezhor/signup",
             "/api/v1/derezhor/auth",
             "/api/v1/derezhor/tracks",
-            "/api/v1/loafloader/**"};
+            "/api/v1/loafloader/**"
+    };
+
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -55,6 +57,7 @@ public class SecurityConfig {
         return http
                 .cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
+
                 .sessionManagement((session) -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

@@ -1,7 +1,8 @@
 package io.github.semanticpie.derezhor.externalAgents.loafLoader.api;
 
-import io.github.semanticpie.derezhor.common.models.ErrorResponse;
 import io.github.semanticpie.derezhor.externalAgents.loafLoader.services.sync.SyncResourcesService;
+import io.github.semanticpie.derezhor.common.errorsResponse.ApiPieTunesErrorInfo;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -27,7 +28,7 @@ public class UploadController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getResource(@PathVariable String id) {
+    public ResponseEntity<?> getResource(@PathVariable String id, HttpServletRequest request) {
         try {
             var resource = syncResourcesService.resourceInputStream(id);
             return ResponseEntity.ok()
@@ -35,12 +36,15 @@ public class UploadController {
         } catch (RuntimeException e) {
             log.warn("OMG!!! Why so bad, bro. Error: {}", e.getMessage());
 //            log.error("errr", e);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.builder().message(e.getMessage()).build());
+            return new ResponseEntity<>(
+                    new ApiPieTunesErrorInfo(HttpStatus.CONFLICT.value(), request.getRequestURL(), e.getMessage()),
+                    HttpStatus.CONFLICT);
+            // Egor: я бы лучше бросал какой нибудь exception, а GlobalHttpHandler его уже ловил
         }
     }
 
     @PostMapping()
-    public ResponseEntity<?> postMultipleResource(@RequestParam("resources") List<MultipartFile> files) {
+    public ResponseEntity<?> postMultipleResource(@RequestParam("resources") List<MultipartFile> files, HttpServletRequest request) {
         try {
             log.info("START [upload]");
             long time = System.currentTimeMillis();
@@ -58,7 +62,10 @@ public class UploadController {
         } catch (RuntimeException e) {
             log.warn("OMG!!! Why so bad, bro. Error: {}", e.getMessage());
             log.error("errr", e);
-            return  ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorResponse.builder().message(e.getMessage()).build());
+            return new ResponseEntity<>(
+                    new ApiPieTunesErrorInfo(HttpStatus.CONFLICT.value(), request.getRequestURL(), e.getMessage()),
+                    HttpStatus.CONFLICT);
+            // Egor: я бы лучше бросал какой нибудь exception, а GlobalHttpHandler его уже ловил
         }
     }
 }
