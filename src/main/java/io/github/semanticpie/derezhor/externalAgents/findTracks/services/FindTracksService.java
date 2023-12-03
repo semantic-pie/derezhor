@@ -5,6 +5,6 @@ import io.github.semanticpie.derezhor.externalAgents.findTracks.models.TrackDTO;
 import java.util.List;
 
 public interface FindTracksService {
-    List<TrackDTO> findAll(Integer page, Integer limit);
+    List<TrackDTO> findAll(Integer page, Integer limit, String userHash);
     List<TrackDTO> findByName(String name);
 }

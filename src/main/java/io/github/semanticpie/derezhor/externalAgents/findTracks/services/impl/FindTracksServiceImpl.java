@@ -20,6 +20,7 @@ import org.ostis.scmemory.websocketmemory.memory.pattern.element.TypePatternElem
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -30,7 +31,7 @@ public class FindTracksServiceImpl implements FindTracksService {
     private final DefaultScContext context;
 
     @Override
-    public List<TrackDTO> findAll(Integer page, Integer limit) {
+    public List<TrackDTO> findAll(Integer page, Integer limit, String userHash) {
         try {
             long time = System.currentTimeMillis();
             var conceptTrack = context.findKeynode("concept_track").orElseThrow();
@@ -100,7 +101,7 @@ public class FindTracksServiceImpl implements FindTracksService {
 
             List<TrackDTO> result = context.find(p)
                     .limit((long) limit * page)
-                    .map(this::toTrack)
+                    .map(pt -> toTrack(pt, userHash))
                     .toList();
 
             if (page == 1) {
@@ -114,6 +115,7 @@ public class FindTracksServiceImpl implements FindTracksService {
 
 
             log.info("SEARCH TIME: {}", System.currentTimeMillis() - time);
+            log.info("FOUND: {}", result);
             return result;
         } catch (ScMemoryException e) {
             throw new RuntimeException(e);
@@ -126,14 +128,40 @@ public class FindTracksServiceImpl implements FindTracksService {
         return List.of();
     }
 
-    private TrackDTO toTrack(Stream<? extends ScElement> pattern) {
+    private TrackDTO toTrack(Stream<? extends ScElement> pattern, String userHash) {
         try {
             var searchResult = pattern.toList();
+
+            boolean isLiked = false;
+
+            if (userHash != null) {
+                var user = context.findKeynode(userHash).orElseThrow();
+                var likes = context.findKeynode("nrel_likes").orElseThrow();
+                ScPattern p = new DefaultWebsocketScPattern();
+                // likes
+                p.addElement(new SearchingPatternTriple(
+                        new FixedPatternElement(user),
+                        new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("user=>track")),
+                        new FixedPatternElement(searchResult.get(2))
+                ));
+
+                p.addElement(new SearchingPatternTriple(
+                        new FixedPatternElement(likes),
+                        new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("likes->(user=>track)")),
+                        new AliasPatternElement("user=>track")
+                ));
+                if (!context.find(p).toList().isEmpty()) {
+                    isLiked = true;
+                }
+            }
+
+
             return TrackDTO.builder()
                     .hash(context.getStringLinkContent((ScLinkString) searchResult.get(5)))
                     .title(context.getStringLinkContent((ScLinkString) searchResult.get(11)))
                     .author(context.getStringLinkContent((ScLinkString) searchResult.get(23)))
                     .scAddr(searchResult.get(2).getAddress())
+                    .liked(isLiked)
                     .build();
         } catch (ScMemoryException | RuntimeException e) {
             return null;

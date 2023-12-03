@@ -4,6 +4,7 @@ import io.github.semanticpie.derezhor.externalAgents.findTracks.models.TrackDTO;
 import io.github.semanticpie.derezhor.externalAgents.findTracks.services.FindTracksService;
 import io.github.semanticpie.derezhor.externalAgents.findTracks.services.LikeService;
 import io.github.semanticpie.derezhor.externalAgents.users.services.UserService;
+import io.github.semanticpie.derezhor.externalAgents.users.services.utils.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +15,26 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/derezhor/tracks")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PATCH, RequestMethod.OPTIONS})
 public class TrackController {
 
     private final FindTracksService findTracksService;
     private final LikeService likeService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    @CrossOrigin("*")
     @GetMapping()
-    public List<TrackDTO> findAll(@RequestParam("page") Integer page, @RequestParam("limit") Integer limit) {
-        return findTracksService.findAll(page, limit);
-    }
+    public List<TrackDTO> findAll(@RequestParam("page") Integer page, @RequestParam("limit") Integer limit, HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        String hash = null;
+        if (token != null) {
+            String jwtToken = token.substring(7);
+            hash = jwtTokenProvider.getUUID(jwtToken);
+        }
 
-    @CrossOrigin("*")
-    @PatchMapping("/{hash}/like")
+        return findTracksService.findAll(page, limit, hash);
+    }
+    
+    @PostMapping("/{hash}/like")
     public ResponseEntity<?> likeTrack(@PathVariable String hash, HttpServletRequest request) {
         return likeService.likeTrack(hash, request);
     }
