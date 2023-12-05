@@ -318,6 +318,26 @@ public class FindTracksServiceImpl implements FindTracksService {
 
     }
 
+    public void generatePlaylist(String hash) {
+        try {
+            var user = context.findKeynode(hash).orElseThrow();
+            var waffleWavesAgent = context.findKeynode("waffle_waves_agent").orElseThrow();
+
+            var flowPlaylist = context.resolveKeynode("flow_playlist", NodeType.CONST_TUPLE);
+            var count = context.createStringLink(LinkType.LINK_CONST, "10");
+            var input = context.resolveKeynode("input", NodeType.CONST);
+
+            context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, input, count);
+            context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, input, flowPlaylist);
+            context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, input, user);
+
+            context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, waffleWavesAgent, input);
+        } catch (ScMemoryException | RuntimeException ignored) {
+            log.warn("Failed to generatePlaylist");
+        }
+    }
+
+    @Override
     public List<GenreDTO> getGenres() {
         try {
             var musicGenre = context.findKeynode("concept_music_genre").orElseThrow();
@@ -369,8 +389,6 @@ public class FindTracksServiceImpl implements FindTracksService {
 
     private GenreDTO toGenre(Stream<? extends ScElement> pattern) {
         try {
-
-
             var list = pattern.toList();
             var genreName = list.get(5);
             var genreSys = list.get(11);
