@@ -7,24 +7,20 @@ import java.util.Objects;
 
 @Data
 @Builder
-public class TrackDTO {
-    private Long scAddr;
-    private String hash;
-    private String title;
-    private String author;
-    private GenreDTO genre;
-    private Boolean liked;
+public class GenreDTO {
+    String idtf;
+    String name;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        TrackDTO trackDTO = (TrackDTO) o;
-        return Objects.equals(hash, trackDTO.hash) && Objects.equals(title, trackDTO.title);
+        GenreDTO genreDTO = (GenreDTO) o;
+        return Objects.equals(idtf, genreDTO.idtf) && Objects.equals(name, genreDTO.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hash, title);
+        return Objects.hash(idtf, name);
     }
 }
