@@ -27,25 +27,35 @@ public class TrackController {
 
     @GetMapping()
     public List<TrackDTO> findAll(@RequestParam("page") Integer page, @RequestParam("limit") Integer limit, HttpServletRequest request) {
-        log.info("BLYAt");
         String token = request.getHeader("Authorization");
         String hash = null;
-        log.info("token: {}", token);
+
         if (token != null && !token.isEmpty()) {
             String jwtToken = token.substring(7);
             hash = jwtTokenProvider.getUUID(jwtToken);
         }
 
-        var temp = findTracksService.findAll(page, limit, hash);
-
-        log.info("token: {}", token);
-        log.info("hash: {}", hash);
-        return temp;
+        return findTracksService.findAll(page, limit, hash);
     }
 
     @PostMapping("/{hash}/like")
     public ResponseEntity<?> likeTrack(@PathVariable String hash, HttpServletRequest request) {
         return likeService.likeTrack(hash, request);
+    }
+
+    @PostMapping("/playlist/generate")
+    public ResponseEntity<?> generatePlaylist(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        String hash = null;
+
+        if (token != null && !token.isEmpty()) {
+            String jwtToken = token.substring(7);
+            hash = jwtTokenProvider.getUUID(jwtToken);
+            findTracksService.generatePlaylist(hash);
+            return ResponseEntity.ok().build();
+        }
+
+        return ResponseEntity.badRequest().build();
     }
 
     @GetMapping("/genres")

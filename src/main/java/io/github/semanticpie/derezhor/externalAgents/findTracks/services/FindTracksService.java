@@ -9,5 +9,7 @@ public interface FindTracksService {
     List<TrackDTO> findAll(Integer page, Integer limit, String userHash);
     List<TrackDTO> findByName(String name);
 
+    void generatePlaylist(String hash);
+
     List<GenreDTO> getGenres();
 }
