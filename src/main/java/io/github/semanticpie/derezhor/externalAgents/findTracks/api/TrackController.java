@@ -48,6 +48,11 @@ public class TrackController {
         return likeService.likeTrack(hash, request);
     }
 
+    @PostMapping("/{hash}/dislike")
+    public ResponseEntity<?> dislikeTrack(@PathVariable String hash, HttpServletRequest request) {
+        return likeService.dislikeTrack(hash, request);
+    }
+
     @GetMapping("/genres")
     public List<GenreDTO> getAllGenres() {
         return findTracksService.getGenres();
