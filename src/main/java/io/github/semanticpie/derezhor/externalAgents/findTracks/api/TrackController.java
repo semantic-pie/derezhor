@@ -43,6 +43,12 @@ public class TrackController {
         return likeService.likeTrack(hash, request);
     }
 
+
+    @PostMapping("/{hash}/dislike")
+    public ResponseEntity<?> dislikeTrack(@PathVariable String hash, HttpServletRequest request) {
+        return likeService.dislikeTrack(hash, request);
+    }
+    
     @PostMapping("/playlist/generate")
     public ResponseEntity<?> generatePlaylist(HttpServletRequest request) {
         String token = request.getHeader("Authorization");

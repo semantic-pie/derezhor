@@ -47,6 +47,27 @@ public class LikeServiceImpl implements LikeService {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @Override
+    public ResponseEntity<?> dislikeTrack(String trackHash, HttpServletRequest request) {
+        try {
+            String jwtToken = request.getHeader("Authorization").substring(7);
+            var username = jwtTokenProvider.getUsername(jwtToken);
+            var uuid = jwtTokenProvider.getUUID(jwtToken);
+
+            if (isUsernameEqualsUUID(uuid, username)) {
+                var unlike = context.resolveKeynode("unlike", NodeType.CONST_CLASS);
+                var userNode = context.findKeynode(uuid).orElseThrow();
+                var trackNode = context.findKeynode(trackHash).orElseThrow();
+                ScEdge userTrackEdge = context.resolveEdge(userNode, EdgeType.D_COMMON_VAR, trackNode);
+                context.createEdge(EdgeType.ACCESS_CONST_POS_PERM, unlike, userTrackEdge);
+            }
+        } catch (ScMemoryException ex) {
+            log.error("Can't dislike track");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     private boolean isUsernameEqualsUUID(String userUUID, String username) {
         try {
             var uuidByUsername = userService.getUserUUID(username).orElseThrow();

@@ -7,5 +7,5 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface LikeService {
 
     ResponseEntity<?> likeTrack(@PathVariable String trackHash, HttpServletRequest request);
-
+    ResponseEntity<?> dislikeTrack(@PathVariable String trackHash, HttpServletRequest request);
 }
