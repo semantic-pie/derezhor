@@ -173,155 +173,110 @@ public class FindTracksServiceImpl implements FindTracksService {
     }
 
     @Override
-    public List<TrackDTO> findByPlaylist(String user, String playlist) {
+    public List<TrackDTO> findByPlaylist(String userHash, String playlist) {
         try {
-            var userNode = context.findKeynode(user).orElseThrow(ScMemoryException::new);
+            var userNode = context.findKeynode(userHash).orElseThrow(ScMemoryException::new);
             var playlistNode = context.findKeynode(playlist).orElseThrow(ScMemoryException::new);
             var sysIdtf = context.findKeynode("nrel_system_identifier").orElseThrow();
 
-            var start = context.findKeynode("concept_start").orElseThrow(ScMemoryException::new);
+            long time = System.currentTimeMillis();
+            var conceptTrack = context.findKeynode("concept_track").orElseThrow();
+            var mainIdtf = context.findKeynode("nrel_main_idtf").orElseThrow();
+            var nrelArtis = context.findKeynode("nrel_artis").orElseThrow();
 
-            DefaultWebsocketScPattern pattern = new DefaultWebsocketScPattern();
-            pattern.addElement(new SearchingPatternTriple(
-                    new FixedPatternElement(userNode),
-                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("user->playlist")),
-                    new FixedPatternElement(playlistNode)
-            ));
-            pattern.addElement(new SearchingPatternTriple(
-                    new FixedPatternElement(start),
-                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("start->track")),
+            ScPattern p = new DefaultWebsocketScPattern();
+            // track
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(conceptTrack),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("edge_1")),
                     new TypePatternElement<>(NodeType.VAR, new AliasPatternElement("track"))
             ));
 
-            // kek
-            pattern.addElement(new SearchingPatternTriple(
+            // hash
+            p.addElement(new SearchingPatternTriple(
                     new AliasPatternElement("track"),
                     new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>hash")),
                     new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("hash"))
             ));
 
-            pattern.addElement(new SearchingPatternTriple(
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(userNode),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("user->track")),
+                    new AliasPatternElement("track")
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(playlistNode),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("playlist->track")),
+                    new AliasPatternElement("track")
+            ));
+
+            p.addElement(new SearchingPatternTriple(
                     new FixedPatternElement(sysIdtf),
                     new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("sys_idtf->(track=>hash)")),
                     new AliasPatternElement("track=>hash")
             ));
-            List<ScElement> kek = new ArrayList<>();
+
+            // title
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("track"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>title")),
+                    new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("title"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(mainIdtf),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("main_idtf->(track=>title)")),
+                    new AliasPatternElement("track=>title")
+            ));
+
+            // artist
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("track"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>artist")),
+                    new TypePatternElement<>(NodeType.VAR, new AliasPatternElement("artist"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(nrelArtis),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("nrel_artist->(track=>artist)")),
+                    new AliasPatternElement("track=>artist")
+            ));
+
+            // artist name
+            p.addElement(new SearchingPatternTriple(
+                    new AliasPatternElement("artist"),
+                    new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("artist=>name")),
+                    new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("artist_name"))
+            ));
+
+            p.addElement(new SearchingPatternTriple(
+                    new FixedPatternElement(mainIdtf),
+                    new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("main_idtf->(artist=>name)")),
+                    new AliasPatternElement("artist=>name")
+            ));
 
 
-            var track = context.find(pattern).findFirst().orElseThrow(ScMemoryException::new).toList().get(5);
-
-            while (track != null) {
-                log.info("add TRACK : {}", track);
-                kek.add(track);
-                track = nextTrack(track);
-            }
-            log.info("END : {}", track);
-            log.info("PLAYLIST {}", kek);
-
-            return toListDto(kek);
+            List<TrackDTO> result = context.find(p)
+//                    .limit((long) limit * page)
+                    .map(this::toTrackPlaylist)
+                    .distinct()
+                    .toList();
 
 
-        } catch (ScMemoryException ex) {}
-        return null;
-    }
-
-    private List<TrackDTO> toListDto(List<ScElement> kek) throws ScMemoryException {
-        var sysIdtf = context.findKeynode("nrel_system_identifier").orElseThrow();
-        var mainIdtf = context.findKeynode("nrel_main_idtf").orElseThrow();
-        var nrelArtis = context.findKeynode("nrel_artis").orElseThrow();
-        return kek.stream().map(el ->{
-            try {
-                DefaultWebsocketScPattern p = new DefaultWebsocketScPattern();
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(el),
-                        new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>hash")),
-                        new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("hash"))
-                ));
-
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(sysIdtf),
-                        new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("sys_idtf->(track=>hash)")),
-                        new AliasPatternElement("track=>hash")
-                ));
-
-                // title
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(el),
-                        new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>title")),
-                        new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("title"))
-                ));
-
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(mainIdtf),
-                        new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("main_idtf->(track=>title)")),
-                        new AliasPatternElement("track=>title")
-                ));
-
-                // artist
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(el),
-                        new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("track=>artist")),
-                        new TypePatternElement<>(NodeType.VAR, new AliasPatternElement("artist"))
-                ));
-
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(nrelArtis),
-                        new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("nrel_artist->(track=>artist)")),
-                        new AliasPatternElement("track=>artist")
-                ));
-
-                // artist name
-                p.addElement(new SearchingPatternTriple(
-                        new AliasPatternElement("artist"),
-                        new TypePatternElement<>(EdgeType.D_COMMON_VAR, new AliasPatternElement("artist=>name")),
-                        new TypePatternElement<>(LinkType.LINK_VAR, new AliasPatternElement("artist_name"))
-                ));
-
-                p.addElement(new SearchingPatternTriple(
-                        new FixedPatternElement(mainIdtf),
-                        new TypePatternElement<>(EdgeType.ACCESS_VAR_POS_PERM, new AliasPatternElement("main_idtf->(artist=>name)")),
-                        new AliasPatternElement("artist=>name")
-                ));
-                var searchResult = context.find(p).findFirst().orElseThrow(ScMemoryException::new).toList();
-
-                for (int i = 0; i<searchResult.size(); i++) {
-                    try {
-                        log.info("bla bla bla {} : {}", i, context.getStringLinkContent((ScLinkString) searchResult.get(i)));
-                    } catch (RuntimeException ex) {
-                        log.info("kek");
-                    }
-
-                }
-
-                return TrackDTO.builder()
-                        .hash(context.getStringLinkContent((ScLinkString) searchResult.get(2)))
-                        .title(context.getStringLinkContent((ScLinkString) searchResult.get(8)))
-                        .author(context.getStringLinkContent((ScLinkString)  searchResult.get(20)))
-//                        .scAddr(searchResult.get(2).getAddress())
-                        .build();
-            } catch (ScMemoryException e) {
-                return null;
-            }
-        }).toList();
-    }
-
-    private ScElement nextTrack(ScElement track) {
-        try {
-            var nextNode = context.findKeynode("nrel_next").orElseThrow(ScMemoryException::new);
-            log.info("next node found");
-            return context.find(new ScPattern5Impl<>(
-                    track, EdgeType.D_COMMON_VAR, NodeType.VAR, EdgeType.ACCESS_VAR_POS_PERM, nextNode
-            )).findFirst().orElseThrow(ScMemoryException::new).get3();
-        } catch (ScMemoryException ex) {
-            return null;
+            log.info("SEARCH TIME: {}", System.currentTimeMillis() - time);
+            log.info("FOUND: {}", result);
+            log.info("TEST");
+            return result;
+        } catch (ScMemoryException e) {
+            throw new RuntimeException(e);
         }
-
     }
 
     public void generatePlaylist(String hash) {
         try {
             var user = context.findKeynode(hash).orElseThrow();
-            var waffleWavesAgent = context.findKeynode("waffle_waves_agent").orElseThrow();
+            var waffleWavesAgent = context.findKeynode("action_waffle_waves").orElseThrow();
 
             var flowPlaylist = context.resolveKeynode("flow_playlist", NodeType.CONST_TUPLE);
             var count = context.createStringLink(LinkType.LINK_CONST, "10");
@@ -416,6 +371,24 @@ public class FindTracksServiceImpl implements FindTracksService {
 //            } catch (RuntimeException | ScMemoryException ignored) {}
 //        }
 //        return null;
+    }
+
+    private TrackDTO toTrackPlaylist(Stream<? extends ScElement> pattern) {
+        try {
+            var searchResult = pattern.toList();
+
+            var tr = TrackDTO.builder()
+                    .hash(context.getStringLinkContent((ScLinkString) searchResult.get(5)))
+                    .title(context.getStringLinkContent((ScLinkString) searchResult.get(17)))
+                    .author(context.getStringLinkContent((ScLinkString) searchResult.get(29)))
+                    .scAddr(searchResult.get(2).getAddress())
+                    .liked(false)
+                    .build();
+            log.info("track: ", tr);
+            return tr;
+        } catch (ScMemoryException | RuntimeException e) {
+            return null;
+        }
     }
   
     private TrackDTO toTrack(Stream<? extends ScElement> pattern, String userHash) {

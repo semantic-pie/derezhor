@@ -65,9 +65,18 @@ public class TrackController {
 
 
     @CrossOrigin("*")
-    @GetMapping("/{playlist}")
-    public List<TrackDTO> findByPlaylist(@RequestParam("user") String user, @PathVariable("playlist") String playlist) {
-        return findTracksService.findByPlaylist(user, playlist);
+    @GetMapping("/{name}/playlist")
+    public List<TrackDTO> findByPlaylist(@PathVariable("name") String name, HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        String hash = null;
+
+        if (token != null && !token.isEmpty()) {
+            String jwtToken = token.substring(7);
+            hash = jwtTokenProvider.getUUID(jwtToken);
+            return findTracksService.findByPlaylist(hash, name);
+        }
+
+        throw new RuntimeException("Failed get playlist");
     }
 
 }
