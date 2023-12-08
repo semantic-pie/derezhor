@@ -6,5 +6,7 @@ import java.io.InputStream;
 
 public interface SyncResourcesService {
     String sync(MultipartFile multipartFile);
+
+    void sync();
     InputStream resourceInputStream(String hash);
 }

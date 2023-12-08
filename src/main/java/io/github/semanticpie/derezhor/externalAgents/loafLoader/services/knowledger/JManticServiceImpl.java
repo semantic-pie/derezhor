@@ -32,7 +32,8 @@ public class JManticServiceImpl implements KnowledgeService {
 
     private void createResource(String resourceIdtf, String contentType) throws ScMemoryException {
         if (context.findKeynode(resourceIdtf).isPresent()) {
-            throw new ResourceAlreadyExistException(resourceIdtf);
+            log.warn("RESOURCE {} EXIST", resourceIdtf);
+            return;
         }
 
         log.info("createResource {}", resourceIdtf);

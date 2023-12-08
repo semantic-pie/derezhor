@@ -23,6 +23,7 @@ public class AppConfiguration {
     @Bean
     protected DefaultScContext contextBean() throws Exception {
         ScMemory memory = new SyncOstisScMemory(new URI(scMachineURL));
+        memory.open();
         return new DefaultScContext(memory);
     }
 
