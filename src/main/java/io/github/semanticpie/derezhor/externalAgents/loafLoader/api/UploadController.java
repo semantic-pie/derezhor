@@ -6,7 +6,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,7 +33,19 @@ public class UploadController {
     public ResponseEntity<?> getResource(@PathVariable String id, HttpServletRequest request) {
         try {
             var resource = syncResourcesService.resourceInputStream(id);
+
+            HttpHeaders headers = new HttpHeaders();
+
+            // Проверяем User-Agent на наличие Safari
+            String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+            if (userAgent != null && userAgent.contains("Safari")) {
+                headers.setContentType(MediaType.valueOf("audio/mpeg"));
+            } else {
+                headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            }
+
             return ResponseEntity.ok()
+                    .headers(headers)
                     .body(new InputStreamResource(resource));
         } catch (RuntimeException e) {
             log.warn("OMG!!! Why so bad, bro. Error: {}", e.getMessage());
