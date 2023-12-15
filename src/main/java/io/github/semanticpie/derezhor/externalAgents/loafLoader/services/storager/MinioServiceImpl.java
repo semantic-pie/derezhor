@@ -2,13 +2,17 @@ package io.github.semanticpie.derezhor.externalAgents.loafLoader.services.storag
 
 import io.github.semanticpie.derezhor.externalAgents.loafLoader.services.sync.ResourceAlreadyExistException;
 import io.minio.*;
-import io.minio.errors.ErrorResponseException;
+import io.minio.errors.*;
+import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 @Slf4j
 @Service
@@ -51,6 +55,12 @@ public class MinioServiceImpl implements StorageService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload file to MinIO", e);
         }
+    }
+
+
+    @Override
+    public Iterable<Result<Item>> getAllFiles() {
+        return minio.listObjects(ListObjectsArgs.builder().bucket(BUCKET_NAME).build());
     }
 
     public boolean isObjectExist(String name) {

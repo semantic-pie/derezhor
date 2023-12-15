@@ -5,6 +5,8 @@ import io.github.semanticpie.derezhor.common.errorsResponse.ApiPieTunesErrorInfo
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -81,5 +83,11 @@ public class UploadController {
                     HttpStatus.CONFLICT);
             // Egor: я бы лучше бросал какой нибудь exception, а GlobalHttpHandler его уже ловил
         }
+    }
+
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void doSomethingAfterStartup() {
+      syncResourcesService.sync();
     }
 }
