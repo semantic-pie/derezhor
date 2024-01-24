@@ -8,23 +8,24 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 
-@Configuration
 @Slf4j
+@Configuration
 @ComponentScan("io.github.semanticpie.derezhor")
+@EnableScheduling
 public class AppConfiguration {
 
     @Value("${derezhor.sc-machine.url}")
     private String scMachineURL;
 
     @Bean
-    protected DefaultScContext contextBean() throws Exception {
-        ScMemory memory = new SyncOstisScMemory(new URI(scMachineURL));
-        memory.open();
-        return new DefaultScContext(memory);
+    protected DefaultScContext contextBean() throws URISyntaxException {
+        // Now scheduler opens the memory
+        return new DefaultScContext(new SyncOstisScMemory(new URI(scMachineURL)));
     }
-
 }

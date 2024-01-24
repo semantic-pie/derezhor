@@ -1,33 +1,40 @@
 package io.github.semanticpie.derezhor.common.services;
 
-import io.github.semanticpie.derezhor.config.ReopenTask;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ostis.api.context.DefaultScContext;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
-import java.util.Timer;
-
-
-@Service
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class KeepAliveService {
-
-    @Value("${connection-timeout:2000}")
-    private Integer pingTime;
-    private final Timer timer = new Timer();
     private final DefaultScContext context;
 
-    @Autowired
-    public KeepAliveService(DefaultScContext context) {
-        this.context = context;
+    @Scheduled(fixedDelayString = "${connection-timeout:2000}")
+    private void onSchedule() {
+       checkConnection();
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void doSomethingAfterStartup() {
-        this.timer.scheduleAtFixedRate(new ReopenTask(context), pingTime, pingTime);
+    /**
+     * If the connection is lost, it tries to reconnect.
+     */
+    public void checkConnection() {
+        try {
+            boolean isOpen = false;
+
+            try {
+                isOpen = context.memory().isOpen();
+            } catch (NullPointerException ignored) {}
+
+            if (!isOpen) {
+                context.memory().open();
+                log.info("Connected to sc-machine");
+            }
+
+        } catch (Exception ignored) {
+            log.error("Connection lost. Try reconnect...");
+        }
     }
 }
