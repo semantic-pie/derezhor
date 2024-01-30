@@ -34,21 +34,15 @@ public class UploadController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getResource(@PathVariable String id, HttpServletRequest request) {
         try {
-            var resource = syncResourcesService.resourceInputStream(id);
+            var resource = syncResourcesService.getResource(id);
 
             HttpHeaders headers = new HttpHeaders();
 
-            // Проверяем User-Agent на наличие Safari
-            String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-            if (userAgent != null && userAgent.contains("Safari")) {
-                headers.setContentType(MediaType.valueOf("audio/mpeg"));
-            } else {
-                headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-            }
+            headers.setContentType(resource.getType());
 
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body(new InputStreamResource(resource));
+                    .body(new InputStreamResource(resource.getFileStream()));
         } catch (RuntimeException e) {
             log.warn("OMG!!! Why so bad, bro. Error: {}", e.getMessage());
 //            log.error("errr", e);

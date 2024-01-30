@@ -1,5 +1,6 @@
 package io.github.semanticpie.derezhor.externalAgents.loafLoader.services.sync;
 
+import io.github.semanticpie.derezhor.externalAgents.loafLoader.models.Resource;
 import io.github.semanticpie.derezhor.externalAgents.loafLoader.services.knowledger.KnowledgeService;
 import io.github.semanticpie.derezhor.externalAgents.loafLoader.services.storager.StorageService;
 import io.minio.errors.*;
@@ -27,35 +28,6 @@ public class SyncResourcesServiceImpl implements SyncResourcesService {
     private final KnowledgeService knowledgeService;
     private final StorageService storageService;
 
-
-    public static String getMimeType(InputStream inputStream) throws IOException {
-        // Создаем парсер
-        Parser parser = new AutoDetectParser();
-
-        // Создаем обработчик содержимого
-        BodyContentHandler handler = new BodyContentHandler();
-
-        // Создаем метаданные
-        Metadata metadata = new Metadata();
-
-        // Контекст разбора
-        ParseContext context = new ParseContext();
-
-        try {
-            // Разбираем содержимое и получаем метаданные
-            parser.parse(inputStream, handler, metadata, context);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            inputStream.close();
-        }
-
-        // Получаем MIME-тип из метаданных
-        MediaType mediaType = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
-        return mediaType.toString();
-    }
-
-
     @Override
     public String sync(MultipartFile multipartFile) {
         String hash = null;
@@ -71,7 +43,7 @@ public class SyncResourcesServiceImpl implements SyncResourcesService {
             log.info("START [upload][file][minio]");
             long minioTime = System.currentTimeMillis();
             inputStream = multipartFile.getInputStream();
-            syncWithStorage(hash, inputStream);
+            syncWithStorage(hash, multipartFile);
             inputStream.close();
             log.info("FINISH [upload][file][minio] [{}]", System.currentTimeMillis() - minioTime);
 
@@ -95,7 +67,7 @@ public class SyncResourcesServiceImpl implements SyncResourcesService {
         files.forEach(file -> {
             try {
                 long scTime = System.currentTimeMillis();
-                syncWithKnowladges(file.get().objectName(), getMimeType(storageService.getFile(file.get().objectName())));
+                syncWithKnowladges(file.get().objectName(), storageService.getFile(file.get().objectName()).toString());
                 log.info("FINISH [upload][file][ostis] [{}]", System.currentTimeMillis() - scTime);
             } catch (NoSuchAlgorithmException | InvalidKeyException | ServerException | InsufficientDataException |
                      ErrorResponseException | IOException | InvalidResponseException | XmlParserException |
@@ -110,8 +82,8 @@ public class SyncResourcesServiceImpl implements SyncResourcesService {
     }
 
 
-    private void syncWithStorage(String hash, InputStream inputStream) throws IOException, MinioException {
-        storageService.putFile(hash, inputStream);
+    private void syncWithStorage(String hash, MultipartFile multipartFile) throws IOException, MinioException {
+        storageService.putFile(hash, multipartFile);
     }
 
     private void syncWithKnowladges(String hash, String contentType) throws ScMemoryException {
@@ -119,7 +91,7 @@ public class SyncResourcesServiceImpl implements SyncResourcesService {
     }
 
     @Override
-    public InputStream resourceInputStream(String hash) {
+    public Resource getResource(String hash) {
         try {
             return storageService.getFile(hash);
         } catch (RuntimeException e) {

@@ -1,18 +1,19 @@
 package io.github.semanticpie.derezhor.externalAgents.loafLoader.services.storager;
 
+import io.github.semanticpie.derezhor.externalAgents.loafLoader.models.Resource;
 import io.github.semanticpie.derezhor.externalAgents.loafLoader.services.sync.ResourceAlreadyExistException;
 import io.minio.*;
-import io.minio.errors.*;
+import io.minio.errors.ErrorResponseException;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -28,26 +29,30 @@ public class MinioServiceImpl implements StorageService {
     }
 
     @Override
-    public InputStream getFile(String hash) {
+    public Resource getFile(String hash) {
         try {
-            return minio.getObject(
+            GetObjectResponse object = minio.getObject(
                     GetObjectArgs.builder()
                             .bucket(BUCKET_NAME)
                             .object(hash)
                             .build()
             );
+            return new Resource(object, MediaType.valueOf(Objects.requireNonNull(object.headers().get("Content-Type"))));
         } catch (Exception e) {
             throw new RuntimeException("Failed to download file from MinIO", e);
         }
     }
 
     @Override
-    public void putFile(String hash, InputStream inputStream) throws ResourceAlreadyExistException {
+    public void putFile(String hash, MultipartFile multipartFile) throws ResourceAlreadyExistException {
         try {
+
+            InputStream inputStream = multipartFile.getInputStream();
             if (!isObjectExist(hash)) {
                 minio.putObject(PutObjectArgs.builder()
                         .bucket(BUCKET_NAME)
                         .object(hash)
+                        .contentType(multipartFile.getContentType())
                         .stream(inputStream, inputStream.available(), -1).build());
             } else {
                 throw new ResourceAlreadyExistException("Failed to upload file to MinIO");
