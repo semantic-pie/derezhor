@@ -1,16 +1,15 @@
 package io.github.semanticpie.derezhor.externalAgents.loafLoader.services.storager;
 
 
+import io.github.semanticpie.derezhor.externalAgents.loafLoader.models.Resource;
 import io.minio.Result;
-import io.minio.StatObjectResponse;
 import io.minio.messages.Item;
-
-import java.io.InputStream;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface StorageService {
-    InputStream getFile(String hash);
+    Resource getFile(String hash);
 
-    void putFile(String hash, InputStream inputStream);
+    void putFile(String hash, MultipartFile multipartFile);
 
     Iterable<Result<Item>> getAllFiles();
 }
